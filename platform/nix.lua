@@ -8,13 +8,30 @@ Platform-specific functions for *nix systems.
 local h = require('helpers')
 local self = { healthy = true, clip_util = "", clip_cmd = "", }
 
+local function split_string(string_, sep)
+    local ret_val = {}
+    for substr in string.gmatch(string_, "([^" .. sep .. "]+)")do
+        table.insert(ret_val, substr)
+    end
+    return ret_val
+end
+
+local function contains(string_list, target)
+    for i=1, #string_list do
+        if string_list[i] == target then
+            return true
+        end
+    end
+    return false
+end
+
 if h.is_mac() then
     self.clip_util = "pbcopy"
     self.clip_cmd = "LANG=en_US.UTF-8 " .. self.clip_util
 elseif h.is_wayland() then
     local function is_wl_copy_installed()
         local handle = h.subprocess { 'wl-copy', '--version' }
-        return handle.status == 0 and handle.stdout:match("wl%-clipboard") ~= nil
+        return handle.status == 0 and contains(split_string(handle.stdout, "%s"), "wl-clipboard")--handle.stdout:match("wl-clipboard") ~= nil
     end
 
     self.clip_util = "wl-copy"
@@ -23,7 +40,7 @@ elseif h.is_wayland() then
 else
     local function is_xclip_installed()
         local handle = h.subprocess { 'xclip', '-version' }
-        return handle.status == 0 and handle.stderr:match("xclip version") ~= nil
+        return handle.status == 0 and contains(split_string(handle.stdout, "%s"), "xclip version")--handle.stderr:match("xclip version") ~= nil
     end
 
     self.clip_util = "xclip"

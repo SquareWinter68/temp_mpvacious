@@ -96,6 +96,7 @@ local config = {
     audio_padding = 0.12, -- Set a pad to the dialog timings. 0.5 = audio is padded by .5 seconds. 0 = disable.
     tie_volumes = false, -- if set to true, the volume of the outputted audio file depends on the volume of the player at the time of export
     preview_audio = false, -- play created audio clips in background.
+    vocab_def_field_default = true, -- If vocab field is empty the sound will not play 
 
     -- Menu
     menu_font_name = "Noto Sans CJK JP",
@@ -128,6 +129,7 @@ local config = {
     audio_template = '[sound:%s]',
     image_field = "Image",
     image_template = '<img alt="snapshot" src="%s">',
+    vocab_def_field = "VocabDef",
     append_media = true, -- True to append video media after existing data, false to insert media before
     disable_gui_browse = false, -- Lets you disable anki browser manipulation by mpvacious.
     ankiconnect_url = '127.0.0.1:8765',
@@ -294,8 +296,9 @@ local function prepare_for_exporting(sub_text)
 end
 
 local function construct_note_fields(sub_text, secondary_text, snapshot_filename, audio_filename)
+    local source_language_sentence = subs_observer.maybe_remove_all_spaces(prepare_for_exporting(sub_text))
     local ret = {
-        [config.sentence_field] = subs_observer.maybe_remove_all_spaces(prepare_for_exporting(sub_text)),
+        [config.sentence_field] = source_language_sentence,
     }
     if not h.is_empty(config.secondary_field) then
         ret[config.secondary_field] = prepare_for_exporting(secondary_text)
@@ -308,6 +311,9 @@ local function construct_note_fields(sub_text, secondary_text, snapshot_filename
     end
     if config.miscinfo_enable == true then
         ret[config.miscinfo_field] = substitute_fmt(config.miscinfo_format)
+    end
+    if config.vocab_def_field_default == true then
+        ret[config.vocab_def_field] = source_language_sentence
     end
     return ret
 end
